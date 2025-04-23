@@ -22,3 +22,4 @@ The project aims to provide a secure and trustless system for managing digital l
 - **Legal Compliance Layer**: Integration with jurisdictions for enforceability in legal systems.
 - **Web3 UI Integration**: Build a front-end to allow users to interact with the smart contract via MetaMask or WalletConnect.
 
+![WhatsApp Image 2025-04-23 at 2 37 14 PM](https://github.com/user-attachments/assets/9a4b1bf1-4300-49a3-8993-b70793edacc5)
