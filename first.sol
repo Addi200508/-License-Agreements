@@ -11,11 +11,14 @@ contract LicenseAgreementOnChain {
     }
 
     mapping(address => License) public licenses;
+    mapping(address => bool) public approvedLicensees; // new mapping for self-update permission
+    address[] private licenseeList; // new array to keep track of licensees
 
     event LicenseCreated(address indexed licensee, string terms, uint256 timestamp);
     event LicenseUpdated(address indexed licensee, string newTerms, uint256 timestamp);
     event LicenseRevoked(address indexed licensee, uint256 timestamp);
     event LicensorTransferred(address indexed oldLicensor, address indexed newLicensor);
+    event LicenseeApproved(address indexed licensee, bool approved);
 
     constructor() {
         licensor = msg.sender;
@@ -35,6 +38,8 @@ contract LicenseAgreementOnChain {
             timestamp: block.timestamp
         });
 
+        licenseeList.push(_licensee);
+
         emit LicenseCreated(_licensee, _terms, block.timestamp);
     }
 
@@ -53,6 +58,7 @@ contract LicenseAgreementOnChain {
         require(lic.timestamp != 0, "License does not exist");
 
         delete licenses[_licensee];
+        approvedLicensees[_licensee] = false;
 
         emit LicenseRevoked(_licensee, block.timestamp);
     }
@@ -73,5 +79,39 @@ contract LicenseAgreementOnChain {
         License memory lic = licenses[_licensee];
         require(lic.timestamp != 0, "License does not exist");
         return (lic.terms, lic.timestamp);
+    }
+
+    // New function 1: Approve licensee to update their license
+    function approveLicenseeToUpdateOwnLicense(address _licensee, bool _approved) external onlyLicensor {
+        require(licenses[_licensee].timestamp != 0, "License does not exist");
+        approvedLicensees[_licensee] = _approved;
+        emit LicenseeApproved(_licensee, _approved);
+    }
+
+    // New function 2: Allow licensee to update their own license terms
+    function updateOwnLicense(string memory _newTerms) external {
+        require(approvedLicensees[msg.sender], "You are not approved to update your license");
+        License storage lic = licenses[msg.sender];
+        require(lic.timestamp != 0, "License does not exist");
+
+        lic.terms = _newTerms;
+        lic.timestamp = block.timestamp;
+
+        emit LicenseUpdated(msg.sender, _newTerms, block.timestamp);
+    }
+
+    // New function 3: Return all licensee addresses
+    function getAllLicensees() external view returns (address[] memory) {
+        return licenseeList;
+    }
+
+    // New function 4: Check if a license is active
+    function isLicenseActive(address _licensee) external view returns (bool) {
+        return licenses[_licensee].timestamp != 0;
+    }
+
+    // New function 5: Licensor can renounce their role (optional governance)
+    function renounceLicensor() external onlyLicensor {
+        licensor = address(0);
     }
 }
